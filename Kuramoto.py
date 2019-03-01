@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from scipy.integrate import solve_ivp
 from random import uniform
+import time
 
 
 #--------------------------------------------------------------
@@ -72,16 +73,16 @@ plt.show()
 # Speed things up by adding np arrays wherever you can
 # time increased drastically at N = 1000 need to fix
 
-N = 100
+N = 10
 #----------------------------
 #     Table of Observation
 # K = 6.8 Sync then out of sync
 # omenga (1,5)
 # y0 (0,2pi)
-K = 3.5
-omega = np.array([uniform(1,8) for i in range(N)],dtype=np.float16)
-y0 = np.array([uniform(0,2*np.pi) for i in range(N)],dtype=np.float16)
-t = (0,100)
+K = 3.3
+omega = np.array([uniform(1,3) for i in range(N)],dtype=np.float16)
+y0 = np.array([uniform(0,np.pi) for i in range(N)],dtype=np.float16)
+t = (0,50)
 
 # Need to streamlin this portion.... lot of computation
 def kuraN(t,theta):
@@ -103,7 +104,7 @@ sol = solve_ivp(kuraN,t,y0)
 form_at = []
 for i in range(len(sol.y[0])):
 	form_half = []	
-	form_half += [[sol.y[j][i]] for j in range(N)]
+	form_half += [sol.y[j][i] for j in range(N)]
 	form_at += [form_half]
 
 
@@ -111,13 +112,11 @@ r = [1] * N
 rl = [r] * len(sol.t)
 
 fig = plt.figure()
-ax = plt.subplot(111, polar=True)
+ax = plt.subplot(121, polar=True)
 
 #---------------------------------------
 # Want a time label so you can see what time there is sync
 # Also need animation of coherence as well
-
-
 point, = ax.plot(form_at[0],rl[0],'go')
 
 def ani(i):
@@ -127,9 +126,47 @@ def ani(i):
 	
 ani = animation.FuncAnimation(fig,ani,frames = len(sol.t),interval = 500,repeat=False)
 
-plt.show()
 
 #---------------------------------------
+#				Coherence
+#---------------------------------------
+
+#? Email Professor ask about coherence 
+def r(theta):
+	
+	N = len(theta)
+	average = np.mean(theta)
+	
+	
+	sums = []
+	for i in range(len(theta)):
+		sums += [np.exp(np.complex(0,theta[i]))]
+		sums = sum(sums)
+	
+	side = (1/N)*(sums/(np.exp(complex(0,average))))
+	
+	return abs(side.real)
+
+r(form_at[0])
+
+coupling = [r(i) for i in form_at]
+
+ax1 = plt.subplot(122)
+
+line, = ax1.plot(sol.t[0],coupling[0],'-o',markersize=2)
+
+def ani2(i):
+	line.set_data(sol.t[:i],coupling[:i])
+	line.axes.axis([0,max(sol.t),0,1])
+
+	return line
+
+ani2 = animation.FuncAnimation(fig,ani2,frames = len(sol.t),interval=500,repeat=False)	
+
+
+
+plt.show()
+
 # Want a time label so you can see what time there is sync
 # Also need animation of coherence as well
 # Consider adding connectivity matrix to extend to Neural Networks
@@ -140,5 +177,13 @@ plt.show()
 
 # A seizure can look like a grid of these animations syncing up together
 # 
+#---------------------------------------
+#			Multiple Models
+#---------------------------------------
+start_time = time.time()
+
+elapsed_time = time.time() - start_time
+print(elapsed_time)
+
 
 
