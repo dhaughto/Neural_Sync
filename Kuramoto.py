@@ -17,7 +17,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
-from scipy.integrate import solve_ivp
+from scipy.integrate import solve_ivp,odeint
 from random import uniform
 import time
 
@@ -205,55 +205,56 @@ def multiple_nodes(N,P,C,t):
 	
 	omega = np.random.uniform(0.1,3,size=(P,N))
 	# Connection Matrix at random
-	conn = np.random.choice([0,1],p = [0.3,0.7],size=(P,P))
+	conn = np.random.choice([0,1],p = [0.2,0.8],size=(P,P))
+	np.fill_diagonal(conn,0)
+	# Iniitial conditions
+	y0 = np.random.uniform(0,np.pi,size = (P,N))
+	print(y0)
 	print('Connectivity Matrix Randomly Generated:')
 	print(conn)
 	# Random K values
 	print()
 	print('K Values Randomly generated:')
 	K = np.random.uniform(0.1,6,size=(P,1))
-	np.fill_diagonal(K,0)
+
 	print(K)
+
 	print()
 	print('Global weight C:')
 	print(C)
+	print()
+
+	# Need to use reduced version
 
 	def kurakura(t,theta):
 		# initialize matrix
-		dthetadt = np.asarray([])
+		dthetadt = np.empty((P,N))
+
 		for p in range(P):
+
 			part_1 = []
+
 			for i in range(N):
+				part_2 = []
+				part_3 = []
+				part_4 = []
+				for q in range(P):
+
+					for j in range(N):
+						# Dont want this here for sure
+						part_2 += [np.sin(theta[p,j] - theta[p,i])]
+						part_3 += [(conn[p,q]/N)*np.sin(theta[q,j] - theta[p,i])]
+
+				part_1 += [omega[p,i] + (K[p,0]/N)* sum(part_2) + C * sum(part_3)]
+
+			dthetadt = np.vstack([dthetadt,part_1])
+		return dthetadt	 		
 
 
-				for j in range(N):
-					part_1 += [np.sin(theta[p,j]-theta[p,i])]
+	sol = odeint(kurakura,y0,t)
+	print(sol)	
 
-
-					part_4 = []
-					for q in range(P):
-						part_4 += (conn[p,q]/N)*np.sin(theta[q,j]-theta[p,i])
-						
-
-
-
-thets = omega[p,i]+(K[p,0]/N)*np.sin(theta[p,j]-theta[p,i]) + C * (conn[p,q]/N)*np.sin(theta[q,j]-theta[p,i])
-
-
-		
-
-
-
-
-
-
-
-		
-		
-					
-
-
-multiple_nodes(100,6,2.0,(0,20))	
+multiple_nodes(100,3,2.0,(0,20))	
 	
 
 
